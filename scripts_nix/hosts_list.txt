@@ -1,0 +1,4 @@
+postgres.local
+nifi.local
+kafka-broker-1.local
+zookepeer.local

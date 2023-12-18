@@ -1,0 +1,3 @@
+/nifi/*
+/postgres/*
+.DS_store

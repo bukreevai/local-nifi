@@ -1,3 +1,8 @@
 /nifi/*
 /postgres/*
 .DS_store
+init/db/demo-medium-en-20170815.sql
+.python-version
+__pycache__/
+.vscode/
+src/kafka_managment/app/.env

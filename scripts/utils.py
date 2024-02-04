@@ -1,11 +1,16 @@
 import gzip
+import tarfile
 from os import (
     path,
     remove,
     makedirs
 )
 import shutil
+import logging
+from typing import Literal
 
+
+logger = logging.getLogger(__name__)
 
 class Zipper:
     @staticmethod
@@ -34,13 +39,47 @@ class Zipper:
             target_path = path.join(path.dirname(source_path), file_name)
 
         # Unpacking the gzip file
-        with gzip.open(source_path, 'rb') as f_in:
-            with open(target_path, 'wb') as f_out:
-                shutil.copyfileobj(f_in, f_out)
+        try: 
+            with gzip.open(source_path, 'rb') as f_in:
+                with open(target_path, 'wb') as f_out:
+                    shutil.copyfileobj(f_in, f_out)
+        except gzip.BadGzipFile as gzip_exeption:
+            logger.error(f"Can't unzip {f_in} - {gzip_exeption.strerror}")
+            raise gzip_exeption
+        except shutil.Error as error:
+            logger.error(f"Can't create unzipped file {f_out} - {error}")
+            raise error
 
-        # Remove the source_path file if not keeping it
+        # Remove the resource_path file if not keeping it
         if not keep_source:
             remove(source_path)
+
+    @staticmethod
+    def extract_from_tar(
+        source_path:str,
+        target_path:str = None,
+        keep_source: bool = True,
+        compression: Literal['gz', 'bz2', 'lzma'] = None
+    ):
+        """
+        Extract files from Tar archive
+        """
+        COMPRESSION_FILE_MODE = {
+            'gz': 'gz',
+            'bz2': 'bz2',
+            'lzma': 'xz' 
+        }
+
+        filemode = f'r:{COMPRESSION_FILE_MODE.get(compression)}' if compression else 'r'
+        with tarfile.open(source_path, mode=filemode) as tar:
+            if target_path:
+                tar.extractall(target_path)
+            else: 
+                tar.extractall()
+
+        if not keep_source:
+            remove(source_path)
+
 
     @staticmethod
     def zip_file(
@@ -68,10 +107,28 @@ class Zipper:
             target_path = path.join(path.dirname(source_path), file_name)
         
         # Compressing the file into a gzip file
-        with open(source_path, 'rb') as f_in:
-            with gzip.open(target_path, 'wb') as f_out:
-                shutil.copyfileobj(f_in, f_out)
+        try:
+            with open(source_path, 'rb') as f_in:
+                with gzip.open(target_path, 'wb') as f_out:
+                    shutil.copyfileobj(f_in, f_out)
+        except shutil.Error as error:
+            logger.error(f"Can't create unzipped file {f_out} - {error}")
+            raise error
+        except gzip.BadGzipFile as gzip_exeption:
+            logger.error(f"Can't zip {f_in} - {gzip_exeption.strerror}")
+            raise gzip_exeption
 
         # Remove the source file if not keeping it
         if not keep_source:
-                remove(source_path)  
+                remove(source_path) 
+
+
+def chown_recursive(directory, uid, gid):
+    for dirpath, dirnames, filenames in os.walk(directory):
+        # Изменяем владельца и группу для директории
+        os.chown(dirpath, uid, gid)
+        
+        # Изменяем владельца и группу для файлов в текущей директории
+        for filename in filenames:
+            file_path = os.path.join(dirpath, filename)
+            os.chown(file_path, uid, gid)

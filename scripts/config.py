@@ -10,9 +10,11 @@ from os import (
     sep
 )
 
+
+
 @dataclass
 class Conf:
-    hosts_file: str = None
+    # hosts_file: str = None
     project:str = getcwd()
     init_dir: str = path.join(project, 'init')
     init_db:str = path.join(init_dir, 'db')
@@ -25,14 +27,18 @@ class Conf:
 
     def __post_init__(self):
         self.init_db_scripts = listdir(self.init_db)
+        self.nifi_dirs: List[str] = [
+                'conf',
+                'database_repository',
+                'content_repository',
+                'flow',
+                'flowfile_repository',
+                'provenance_repository',
+                'state'
+            ]
+        self.db_dirs: List[str] = [
+            'data',
+            'init'
+        ]
 
-
-
-
-windows_config = Conf(
-    hosts_file = path.join('C:', sep, 'Windows', 'System32', 'drivers', 'etc', 'hosts'),
-)
-
-unix_config = Conf(
-    hosts_file = path.join('/', 'etc', 'hosts'),
-)
+config = Conf()
